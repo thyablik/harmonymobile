@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# Сборка Android APK для Harmony (нужен Linux, macOS или WSL2 на Windows).
+#
+#   ./android/build_apk.sh              # debug APK для arm64 (большинство телефонов)
+#   ARCH=x86_64 ./android/build_apk.sh  # эмулятор
+#
+# Что делает: копирует проект во временную папку без лишнего, встраивает чисто
+# питоновские зависимости (mutagen, yt-dlp), скачивает Android-колёса PySide6
+# и запускает pyside6-android-deploy.
+set -euo pipefail
+
+QT_VER="${QT_VER:-6.12.0}"          # версия PySide6 на ПК и в колёсах должна совпадать
+ARCH="${ARCH:-aarch64}"             # aarch64 или x86_64
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD="$ROOT/build"
+WORK="$BUILD/app"
+WHEELS="$BUILD/wheels"
+BASE="https://download.qt.io/official_releases/QtForPython"
+PYSIDE_WHEEL="pyside6-$QT_VER-$QT_VER-cp310-abi3-android_$ARCH.whl"
+SHIBOKEN_WHEEL="shiboken6-$QT_VER-$QT_VER-cp310-abi3-android_$ARCH.whl"
+
+PY="${PYTHON:-python3}"
+[ -d "$BUILD/venv" ] || "$PY" -m venv "$BUILD/venv"
+# shellcheck disable=SC1091
+source "$BUILD/venv/bin/activate"
+pip install -q --upgrade pip
+pip install -q "PySide6==$QT_VER"
+pip install -q -r "$(python -c 'import PySide6,os;print(os.path.join(os.path.dirname(PySide6.__file__),"scripts","requirements-android.txt"))')"
+
+mkdir -p "$WHEELS"
+[ -f "$WHEELS/$PYSIDE_WHEEL" ]   || curl -fL "$BASE/pyside6/$PYSIDE_WHEEL"     -o "$WHEELS/$PYSIDE_WHEEL"
+[ -f "$WHEELS/$SHIBOKEN_WHEEL" ] || curl -fL "$BASE/shiboken6/$SHIBOKEN_WHEEL" -o "$WHEELS/$SHIBOKEN_WHEEL"
+
+# чистая копия проекта: без данных пользователя, сборок и десктопных файлов
+rm -rf "$WORK"; mkdir -p "$WORK"
+(cd "$ROOT" && tar \
+    --exclude=./build --exclude=./data --exclude=./android --exclude=./vendor \
+    --exclude='__pycache__' --exclude=./run.bat --exclude=./Harmony.spec \
+    -cf - .) | tar -xf - -C "$WORK"
+
+# pyside6-android-deploy ставит в APK только python3, shiboken6 и PySide6,
+# поэтому остальные (чисто питоновские) пакеты кладём прямо в проект.
+pip install -q --no-compile --target "$WORK/vendor" mutagen yt-dlp
+
+cp "$ROOT/android/icon.png" "$WORK/icon.png"
+cat > "$WORK/pysidedeploy.spec" <<SPEC
+[app]
+title = Harmony
+project_dir = .
+input_file = main.py
+exec_directory = $BUILD/out
+project_file =
+icon = icon.png
+
+[python]
+packages = Nuitka==4.1.1
+android_packages = buildozer==1.6.0,cython==0.29.33
+
+[qt]
+qml_files =
+excluded_qml_plugins =
+modules =
+plugins =
+
+[android]
+wheel_pyside = $WHEELS/$PYSIDE_WHEEL
+wheel_shiboken = $WHEELS/$SHIBOKEN_WHEEL
+plugins =
+
+[nuitka]
+macos.permissions =
+mode = standalone
+extra_args = --quiet --noinclude-qt-translations
+
+[buildozer]
+mode = debug
+recipe_dir =
+jars_dir =
+ndk_path = ${ANDROID_NDK_ROOT:-}
+sdk_path = ${ANDROID_SDK_ROOT:-}
+local_libs =
+arch = $ARCH
+SPEC
+
+cd "$WORK"
+pyside6-android-deploy \
+    --name Harmony \
+    -c pysidedeploy.spec \
+    --wheel-pyside "$WHEELS/$PYSIDE_WHEEL" \
+    --wheel-shiboken "$WHEELS/$SHIBOKEN_WHEEL" \
+    --extra-modules=Network,Multimedia \
+    --extra-ignore-dirs=vendor \
+    -f
+
+echo
+echo "Готово. APK лежит в: $BUILD/out"

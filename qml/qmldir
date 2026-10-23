@@ -1,0 +1,32 @@
+singleton Theme 1.0 Theme.qml
+singleton Player 1.0 Player.qml
+singleton Nav 1.0 Nav.qml
+singleton Icons 1.0 Icons.qml
+singleton Lang 1.0 Lang.qml
+Icon 1.0 Icon.qml
+IconButton 1.0 IconButton.qml
+PillButton 1.0 PillButton.qml
+PlayPauseButton 1.0 PlayPauseButton.qml
+SeekBar 1.0 SeekBar.qml
+SlimScrollBar 1.0 SlimScrollBar.qml
+Equalizer 1.0 Equalizer.qml
+Cover 1.0 Cover.qml
+TrackCard 1.0 TrackCard.qml
+TrackRow 1.0 TrackRow.qml
+Shelf 1.0 Shelf.qml
+PageHost 1.0 PageHost.qml
+Sidebar 1.0 Sidebar.qml
+BottomNav 1.0 BottomNav.qml
+BottomBar 1.0 BottomBar.qml
+FullPlayer 1.0 FullPlayer.qml
+LyricsView 1.0 LyricsView.qml
+LyricsPage 1.0 LyricsPage.qml
+PlaylistPicker 1.0 PlaylistPicker.qml
+HomePage 1.0 HomePage.qml
+LibraryPage 1.0 LibraryPage.qml
+PlaylistPage 1.0 PlaylistPage.qml
+ImportPage 1.0 ImportPage.qml
+ImportCard 1.0 ImportCard.qml
+DownloadPage 1.0 DownloadPage.qml
+SettingsPage 1.0 SettingsPage.qml
+ConfirmDialog 1.0 ConfirmDialog.qml
