@@ -95,7 +95,7 @@ run_deploy() {
         -c pysidedeploy.spec \
         --wheel-pyside "$WHEELS/$PYSIDE_WHEEL" \
         --wheel-shiboken "$WHEELS/$SHIBOKEN_WHEEL" \
-        --extra-modules=Network,Multimedia \
+        --extra-modules=Network,Multimedia,Quick,QuickControls2 \
         --extra-ignore-dirs=vendor \
         --keep-deployment-files \
         -v \
@@ -109,6 +109,9 @@ find_apk() {
 
 run_deploy || echo "deploy завершился с ошибкой, проверяю результат..."
 APK="$(find_apk)"
+
+# (Quick и QuickControls2 нужны, потому что в Python импортируется только QtQml,
+# а интерфейс целиком на QtQuick - автоопределение модулей их не видит.)
 
 # Лицензии Android SDK: в CI некому нажать "y", поэтому после первого запуска
 # (когда buildozer уже скачал свой SDK и создал buildozer.spec) принимаем их сами и повторяем.
