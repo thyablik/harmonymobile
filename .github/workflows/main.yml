@@ -34,10 +34,10 @@ jobs:
             ~/.buildozer
             ~/.pyside6_android_deploy
             build/wheels
-          key: apk-${{ hashFiles('android/build_apk.sh') }}
+          key: apk-v2-${{ hashFiles('android/build_apk.sh') }}
 
       - name: Сборка APK (arm64)
-        run: bash android/build_apk.sh
+        run: bash android/build_apk.sh 2>&1 | tee build-log.txt; exit ${PIPESTATUS[0]}
 
       - name: Поиск APK
         if: always()
@@ -62,6 +62,7 @@ jobs:
         with:
           name: build-logs
           path: |
+            build-log.txt
             build/app/pysidedeploy.spec
             build/app/deployment/**
             build/out/**
