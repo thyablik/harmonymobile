@@ -39,8 +39,31 @@ jobs:
       - name: Сборка APK (arm64)
         run: bash android/build_apk.sh
 
+      - name: Поиск APK
+        if: always()
+        run: |
+          echo "=== apk/aab ==="
+          find . -type f \( -name '*.apk' -o -name '*.aab' \) -not -path './build/venv/*' 2>/dev/null || true
+          echo "=== build tree (2 уровня) ==="
+          find build -maxdepth 2 -not -path 'build/venv*' -not -path 'build/wheels*' 2>/dev/null | head -60 || true
+          mkdir -p collected
+          find . -type f \( -name '*.apk' -o -name '*.aab' \) -not -path './build/venv/*' -not -path './collected/*' \
+            -exec cp {} collected/ \; 2>/dev/null || true
+          ls -la collected
+
       - uses: actions/upload-artifact@v4
         with:
           name: Harmony-apk
-          path: build/out/*.apk
-          if-no-files-found: error
+          path: collected/*
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-logs
+          path: |
+            build/app/pysidedeploy.spec
+            build/app/deployment/**
+            build/out/**
+            ~/.pyside6_android_deploy/**/*.log
+          if-no-files-found: ignore
