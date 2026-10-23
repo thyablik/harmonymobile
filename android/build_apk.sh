@@ -40,6 +40,9 @@ rm -rf "$WORK"; mkdir -p "$WORK"
 
 # pyside6-android-deploy ставит в APK только python3, shiboken6 и PySide6,
 # поэтому остальные (чисто питоновские) пакеты кладём прямо в проект.
+# убираем BOM и CRLF из .py (файлы, сохранённые в Блокноте Windows, ломают парсер deploy)
+find "$WORK" -name '*.py' -not -path "$WORK/vendor/*" -exec sed -i -e '1s/^\xEF\xBB\xBF//' -e 's/\r$//' {} +
+
 pip install -q --no-compile --target "$WORK/vendor" mutagen yt-dlp
 
 cp "$ROOT/android/icon.png" "$WORK/icon.png"
